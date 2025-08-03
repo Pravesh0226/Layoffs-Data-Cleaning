@@ -1,0 +1,158 @@
+select * 
+from layoffs;
+
+-- REMOVE DUPLICATES
+-- STANDARDIZE DATA
+-- NULL VALUES OR BLANK VALUES
+-- REMOVE unnecessary COLUMNS
+
+-- REMOVE DUPLICATES
+
+CREATE TABLE layoffs_staging 
+LIKE layoffs;
+
+INSERT INTO layoffs_staging
+SELECT * 
+FROM layoffs;
+
+CREATE TABLE Staging_2 (
+  company TEXT,
+  location TEXT,
+  industry TEXT,
+  total_laid_off INT DEFAULT NULL,
+  percentage_laid_off TEXT,
+  `date` TEXT,
+  stage TEXT,
+  country TEXT,
+  funds_raised_millions INT DEFAULT NULL,
+  ROW_NUM INT
+);
+
+INSERT INTO Staging_2
+SELECT *,
+       ROW_NUMBER() OVER (
+           PARTITION BY company, location, industry, total_laid_off,
+                        percentage_laid_off, `date`, stage, country, funds_raised_millions
+           ORDER BY company
+       ) AS ROW_NUM
+FROM layoffs_staging;
+
+select * 
+FROM Staging_2
+WHERE ROW_NUM > 1;
+
+SET SQL_SAFE_UPDATES = 0; # Temp Disable	Quick one-time delete
+
+DELETE 
+FROM Staging_2
+WHERE ROW_NUM > 1;
+
+select *
+from staging_2;
+
+
+-- STANDARDIZE DATA
+
+select company, trim(company)
+from staging_2;
+
+UPDATE staging_2
+SET company = trim(company);
+
+SELECT distinct INDUSTRY
+FROM staging_2;
+
+UPDATE staging_2
+SET INDUSTRY = "Crypto"
+WHERE INDUSTRY LIKE "CRYPTO%";
+
+SELECT distinct COUNTRY
+FROM staging_2
+ORDER BY 1;
+
+SELECT distinct COUNTRY, trim(TRAILING "." FROM COUNTRY)
+FROM STAGING_2
+ORDER BY 1 ;
+
+UPDATE STAGING_2
+SET COUNTRY = trim(TRAILING "." FROM COUNTRY)
+WHERE COUNTRY LIKE "United States%";
+
+SELECT `DATE`
+FROM STAGING_2;
+
+
+SELECT `DATE`,
+STR_TO_DATE(`DATE`,"%m/%d/%Y")
+FROM STAGING_2;
+
+UPDATE STAGING_2
+SET `DATE` = STR_TO_DATE(`DATE`,"%m/%d/%Y");
+
+ALTER TABLE STAGING_2
+MODIFY COLUMN `DATE` DATE;
+
+
+-- NULL VALUES OR BLANK VALUES
+
+UPDATE STAGING_2
+SET INDUSTRY = NULL
+WHERE INDUSTRY  = "";
+
+
+SELECT *
+FROM STAGING_2
+WHERE INDUSTRY IS NULL
+OR INDUSTRY = "";
+
+SELECT *
+FROM STAGING_2
+WHERE COMPANY = "Juul";
+
+SELECT *
+FROM STAGING_2 T1
+JOIN STAGING_2 T2
+	ON T1.COMPANY = T2.COMPANY
+WHERE (T1.INDUSTRY IS NULL OR T1.INDUSTRY = "")
+AND T2.INDUSTRY IS NOT NULL;
+
+UPDATE STAGING_2 T1
+JOIN STAGING_2 T2
+	ON T1.COMPANY = T2.COMPANY
+SET T1.INDUSTRY = T2.INDUSTRY
+WHERE T1.INDUSTRY IS NULL
+AND T2.INDUSTRY IS NOT NULL;
+
+
+
+SELECT *
+FROM STAGING_2
+WHERE TOTAL_LAID_OFF IS NULL
+AND PERCENTAGE_LAID_OFF IS NULL;
+
+
+DELETE
+FROM STAGING_2
+WHERE TOTAL_LAID_OFF IS NULL
+AND PERCENTAGE_LAID_OFF IS NULL;
+
+SELECT *
+FROM STAGING_2;
+
+ALTER TABLE STAGING_2
+DROP COLUMN ROW_NUM;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
