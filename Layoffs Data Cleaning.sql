@@ -2,11 +2,6 @@ select *
 from layoffs;
 
 -- REMOVE DUPLICATES
--- STANDARDIZE DATA
--- NULL VALUES OR BLANK VALUES
--- REMOVE unnecessary COLUMNS
-
--- REMOVE DUPLICATES
 
 CREATE TABLE layoffs_staging 
 LIKE layoffs;
